@@ -5,26 +5,31 @@ import { UserServices } from "./user.service";
 import AppError from "../../errorHelpers/AppError";
 import { catchAsync } from "../../utils/catchAsyncs";
 import { success } from "zod";
+import { sendResponse } from "../../utils/sendResponse";
 
 
 
 const createUser = catchAsync(async (req: Request, res: Response, next: NextFunction) => {
-    const user = await UserServices.createUser(req.body)
-    res.status(httpStatus.CREATED).json({
+    const result = await UserServices.createUser(req.body);
+
+    sendResponse(res, {
         success: true,
+        statusCode: httpStatus.CREATED,
         message: "User created successfully",
-        data: user
-    });
+        data: result.data,
+    })
 })
 
 
 const getAllUsers = catchAsync(async (req: Request, res: Response, next: NextFunction) => {
-    const users = await UserServices.getAllUsers();
+    const result = await UserServices.getAllUsers();
 
-    res.status(httpStatus.OK).json({
+        sendResponse(res, {
         success: true,
-        message: "All users Retrived Successfully",
-        data: users
+        statusCode: httpStatus.CREATED,
+        message: "User created successfully",
+        data: result.data,
+        meta: result.meta,
     })
 })
 

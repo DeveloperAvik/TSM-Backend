@@ -44,8 +44,4 @@ export interface IUser {
 
     bookings?: Types.ObjectId[]; // Reference to Booking model
     guides?: Types.ObjectId[]
-
-
-
-
 }

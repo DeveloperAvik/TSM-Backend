@@ -1,5 +1,5 @@
 import AppError from "../../errorHelpers/AppError";
-import { isActive, IUser } from "../user/user.interface"
+import { isActive, isDeleted, IUser } from "../user/user.interface"
 import { User } from "../user/user.model";
 import httpStatus from 'http-status-codes';
 import bcryptjs from 'bcryptjs';
@@ -46,16 +46,16 @@ const getNewAccessToken = async (refreshToken: string) => {
         throw new AppError(httpStatus.BAD_REQUEST, "User doesnot Exist")
     }
 
-    if(isUserExist.isActive === isActive.BLOCKED || isUserExist.isActive === isActive.INACTIVE) {
+    if (isUserExist.isActive === isActive.BLOCKED || isUserExist.isActive === isActive.INACTIVE) {
         throw new AppError(httpStatus.BAD_REQUEST, `user is ${isUserExist.isActive}`)
     }
 
-    if(isUserExist.isDeleted) {
+    if (isUserExist.isDeleted === isDeleted.DELETED) {
         throw new AppError(httpStatus.BAD_REQUEST, "User is deleted")
     }
 
 
-    const jwtPayload ={
+    const jwtPayload = {
         userId: isUserExist._id,
         email: isUserExist.email,
         role: isUserExist.role

@@ -1,11 +1,13 @@
 import AppError from "../../errorHelpers/AppError";
-import { IUser } from "../user/user.interface"
+import { isActive, IUser } from "../user/user.interface"
 import { User } from "../user/user.model";
 import httpStatus from 'http-status-codes';
 import bcryptjs from 'bcryptjs';
-import jwt from "jsonwebtoken";
-import { generateToken } from "../../utils/jwt";
+import { createUserTokens } from "../../utils/userTokes";
+import { generateToken, verifyToken } from "../../utils/jwt";
 import { envVars } from "../../config/env";
+import { JwtPayload } from "jsonwebtoken";
+
 
 const credentialsLogin = async (payload: Partial<IUser>) => {
     const { email, password } = payload;
@@ -22,29 +24,56 @@ const credentialsLogin = async (payload: Partial<IUser>) => {
         throw new AppError(httpStatus.BAD_REQUEST, "Incorrect Passoerd")
     }
 
-    const jwtPayload = {
+
+    const userTokens = createUserTokens(isUserExist)
+    const { password: pass, ...rest } = isUserExist.toObject();
+
+
+    return {
+        accessToken: userTokens.accessToken,
+        refreshToken: userTokens.refreshToken,
+        user: rest
+    }
+}
+
+const getNewAccessToken = async (refreshToken: string) => {
+
+    const verifiedRefreshToken = verifyToken(refreshToken, envVars.JWT_REFREESH_SECRET) as JwtPayload
+
+    const isUserExist = await User.findOne({ email: verifiedRefreshToken.email });
+
+    if (!isUserExist) {
+        throw new AppError(httpStatus.BAD_REQUEST, "User doesnot Exist")
+    }
+
+    if(isUserExist.isActive === isActive.BLOCKED || isUserExist.isActive === isActive.INACTIVE) {
+        throw new AppError(httpStatus.BAD_REQUEST, `user is ${isUserExist.isActive}`)
+    }
+
+    if(isUserExist.isDeleted) {
+        throw new AppError(httpStatus.BAD_REQUEST, "User is deleted")
+    }
+
+
+    const jwtPayload ={
         userId: isUserExist._id,
         email: isUserExist.email,
         role: isUserExist.role
     }
 
-    const accessToken = generateToken(jwtPayload, envVars.JWT_ACCESS_SECRET, envVars.JWT_ACCESS_EXPIRES);
+    const accessToken = generateToken(jwtPayload, envVars.JWT_ACCESS_EXPIRES, envVars.JWT_REFREESH_EXPIRED)
 
-    const refreshToken = generateToken(jwtPayload, envVars.JWT_REFREESH_SECRET, envVars.JWT_REFREESH_EXPIRED);
 
-    // delete isUserExist.password
-
-    const { password: pass, ...rest } = isUserExist;
+    // const userTokens = createUserTokens(isUserExist)
+    // const { password: pass, ...rest } = isUserExist.toObject();
 
 
     return {
-        // email: isUserExist.email
-        accessToken,
-        refreshToken,
-        user: rest
+        accessToken
     }
 }
 
 export const AuthServices = {
-    credentialsLogin
+    credentialsLogin,
+    getNewAccessToken
 }

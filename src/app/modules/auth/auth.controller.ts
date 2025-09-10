@@ -18,11 +18,11 @@ const credentialsLogin = catchAsync(async (req: Request, res: Response, next: Ne
 
 
         if (err) {
-            return new AppError(httpStatus.BAD_GATEWAY, err);
+            return next(new AppError(401, err));
         }
 
         if (!user) {
-            return new AppError(httpStatus.BAD_GATEWAY, err);
+            return next(new AppError(401, info.message));
         }
 
 
@@ -44,11 +44,11 @@ const credentialsLogin = catchAsync(async (req: Request, res: Response, next: Ne
                 user: rest
             }
         })
-    },)(res, req, next)
+    },)(req, res, next)
 
 
-    res.cookie("accessToken", loginInfo.accessToken, { httpOnly: true, secure: false })
-    res.cookie("refreshToken", loginInfo.refreshToken, { httpOnly: true, secure: false })
+    // res.cookie("accessToken", loginInfo.accessToken, { httpOnly: true, secure: false })
+    // res.cookie("refreshToken", loginInfo.refreshToken, { httpOnly: true, secure: false })
 
 
 });

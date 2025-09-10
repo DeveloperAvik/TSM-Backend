@@ -22,7 +22,7 @@ passport.use(
             const isGoogleAuthenticated = isUserExist.auths.some(providerObjects => providerObjects.provider == "google")
 
 
-            if (isGoogleAuthenticated) {
+            if (isGoogleAuthenticated && !isUserExist.password) {
                 return done(null, false, { message: "You have Authenticated through Google Login \n," })
             }
 

@@ -18,6 +18,17 @@ export const globalErrorHandler = (err: any, req: Request, res: Response, next: 
         message = `${duplicate} alredy exist`
     }
 
+    else if (err.name === "ZodError") {
+        statusCode = 400
+        message = "Zod Error"
+        err.issues.forEach((issue: any) => {
+            errorSources.push({
+                path: issue.path[issue.path.length - 1],
+                message: issue.message
+            })
+        });
+    }
+
     else if (err.name === "ValidationError") {
         statusCode = 400;
         const errors = Object.values(err.errors);

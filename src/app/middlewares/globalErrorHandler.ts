@@ -1,10 +1,19 @@
 import { NextFunction, Request, Response } from "express"
 import { envVars } from "../config/env"
 import AppError from "../errorHelpers/AppError";
+import mongoose from "mongoose";
+import { TErrorSources, TGenericErrorResponse } from "../interfaces/error.types";
+import { handelDuplicateError } from "../helpers/handleDuplicateErros";
+import { zodError } from "../helpers/handleZodError";
+import { validationError } from "../helpers/handleValidationError";
+import { handelCastError } from "../helpers/handleCastError";
+
+
+
 
 export const globalErrorHandler = (err: any, req: Request, res: Response, next: NextFunction) => {
 
-    const errorSources: any = [];
+    let errorSources: any = [];
 
     let statusCode = 500;
     let message = `Something Went Wrong`;
@@ -12,36 +21,33 @@ export const globalErrorHandler = (err: any, req: Request, res: Response, next: 
 
 
     if (err.code === 11000) {
-        console.log("Duplicate error", err.message);
-        const duplicate = err.message.match(/"([^"]*)"/)
-        statusCode = 400;
-        message = `${duplicate} alredy exist`
+        const simplifyDuplicateError = handelDuplicateError(err);
+        statusCode = simplifyDuplicateError.statusCode
+        message = simplifyDuplicateError.message
     }
 
     else if (err.name === "ZodError") {
-        statusCode = 400
-        message = "Zod Error"
-        err.issues.forEach((issue: any) => {
-            errorSources.push({
-                path: issue.path[issue.path.length - 1],
-                message: issue.message
-            })
-        });
+
+        const simplifyZodError = zodError(err)
+
+        statusCode = simplifyZodError.statusCode;
+        message = simplifyZodError.message
+        errorSources = simplifyZodError.errorSources
     }
 
     else if (err.name === "ValidationError") {
-        statusCode = 400;
-        const errors = Object.values(err.errors);
-        errors.forEach((errorObject: any) => errorSources.push({
-            path: errorObject.path,
-            message: errorObject.message
-        }))
-        message = err.message
+
+        const simpleValidationError = validationError(err);
+
+        statusCode = simpleValidationError.statusCode,
+            errorSources = simpleValidationError.errorSources
+        message = "Validation Error"
     }
 
     else if (err.name === "CastError") {
-        statusCode = 400;
-        message = "Invalid MongoDB ObjectId. Please provide a valid id"
+        const simplyfiedCastError = handelCastError(err);
+        statusCode = simplyfiedCastError.statusCode
+        message = simplyfiedCastError.message
     }
 
     else if (err instanceof AppError) {
@@ -58,7 +64,7 @@ export const globalErrorHandler = (err: any, req: Request, res: Response, next: 
         success: false,
         message,
         errorSources,
-        // err,
+        err: envVars.nodeEnv === "development" ? err : null,
         stack: envVars.nodeEnv === "development" ? err.stack : null
     })
 }

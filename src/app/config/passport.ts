@@ -1,9 +1,39 @@
 import passport from "passport";
-import { Strategy as GoogleStrategy, Profile, VerifyCallback } from "passport-google-oauth20";
+import { Strategy as GoogleStrategy, Profile, Strategy, VerifyCallback } from "passport-google-oauth20";
 import { envVars } from "./env";
 import { User } from "../modules/user/user.model";
 import { isVerified, Role } from "../modules/user/user.interface";
+import { Strategy as LocalStrategy } from "passport-local";
+import bcryptjs from 'bcryptjs';
 
+passport.use(
+    new LocalStrategy({
+        usernameField: "email",
+        passwordField: "password"
+    }, async (email: string, password: string, done: VerifyCallback) => {
+        try {
+
+            const isUserExist = await User.findOne({ email });
+
+            if (!isUserExist) {
+                return done(null, false, { message: "User Doesnot Exist" })
+            }
+
+            const isPasswordMatch = await bcryptjs.compare(password as string, isUserExist.password as string)
+
+            if (!isPasswordMatch) {
+                return done(null, false, { message: "Password doesnot match" })
+
+            }
+
+            return done(null, isUserExist)
+
+        } catch (err) {
+            console.log(err)
+            done(err);
+        }
+    })
+)
 
 passport.use(
     new GoogleStrategy({
@@ -51,7 +81,7 @@ passport.serializeUser((user: any, done: (err: any, id?: unknown) => void) => {
     done(null, user._id)
 })
 
-passport.deserializeUser(async(id: string, done: any)=> {
+passport.deserializeUser(async (id: string, done: any) => {
     try {
         const user = await User.findById(id);
         done(null, user);

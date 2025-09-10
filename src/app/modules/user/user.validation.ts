@@ -1,4 +1,4 @@
-import z from "zod";
+import { z } from "zod";
 import { isActive, isDeleted, isVerified, Role } from "./user.interface";
 
 export const createUserZodSchema = z.object({
@@ -9,7 +9,7 @@ export const createUserZodSchema = z.object({
 
     email: z.string()
         .email({ message: "Invalid email format." })
-        .min(3, { message: "Email must be atlest 3 character long" })
+        .min(3, { message: "Email must be at least 3 characters long" })
         .max(100, { message: "Email cannot exceed 100 characters" })
         .nonempty({ message: "Email is required." }),
 
@@ -19,41 +19,42 @@ export const createUserZodSchema = z.object({
         .regex(/^(?=.*[!@#$%^&*])/, { message: "Password must contain at least 1 special character." })
         .regex(/^(?=.*\d)/, { message: "Password must contain at least 1 number." }),
 
-    phoneNumber: z.string().regex(/^\+?[1-9]\d{1,14}$/, { message: "Invalid phone number format." }).optional(),
+    phoneNumber: z.string()
+        .regex(/^\+?[1-9]\d{1,14}$/, { message: "Invalid phone number format." })
+        .optional(),
 
     address: z.string()
         .max(200, { message: "Address can have a maximum of 200 characters." })
-        .optional()
+        .optional(),
 });
-
-
 
 export const updateUserZodSchema = z.object({
     name: z.string()
         .min(2, { message: "Name too short. Minimum 2 characters required." })
         .max(50, { message: "Name too long. Maximum 50 characters allowed." })
-        .nonempty({ message: "Name is required." }).optional(),
-
+        .nonempty({ message: "Name is required." })
+        .optional(),
 
     password: z.string()
         .min(8, { message: "Password must be at least 8 characters long." })
         .regex(/^(?=.*[A-Z])/, { message: "Password must contain at least 1 uppercase letter." })
         .regex(/^(?=.*[!@#$%^&*])/, { message: "Password must contain at least 1 special character." })
-        .regex(/^(?=.*\d)/, { message: "Password must contain at least 1 number." }).optional(),
+        .regex(/^(?=.*\d)/, { message: "Password must contain at least 1 number." })
+        .optional(),
 
-    phoneNumber: z.string().regex(/^\+?[1-9]\d{1,14}$/, { message: "Invalid phone number format." }).optional(),
-
+    phoneNumber: z.string()
+        .regex(/^\+?[1-9]\d{1,14}$/, { message: "Invalid phone number format." })
+        .optional(),
 
     role: z.enum(Object.keys(Role) as [string]).optional(),
 
     isActive: z.enum(Object.values(isActive) as [string]).optional(),
 
-    isDeleted: z.boolean({ invalid_type_error: "isDeleted must be true or flase" }).optional(),
+    isDeleted: z.boolean({ invalid_type_error: "isDeleted must be true or false" }).optional(),
 
-    isVerified: z.boolean({ invalid_type_error: "isverified must be true or flase" }).optional(),
+    isVerified: z.boolean({ invalid_type_error: "isVerified must be true or false" }).optional(),
 
     address: z.string({ invalid_type_error: "Address must be string" })
-        .max(200, { message: "Address cannnot exceed 200 characters." })
+        .max(200, { message: "Address cannot exceed 200 characters." })
         .optional(),
-
-})
+});
